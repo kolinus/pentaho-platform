@@ -80,6 +80,39 @@ public class UserRoleListResource extends AbstractJaxRSResource {
    * 
    * @throws Exception
    */
+  /**
+   * Returns the list of users registered in the platform.
+   * 
+   *  <p> The method returns a list of user names. the method never returns null.
+   *  Endpoint address is http://host:port/pentaho/api/userrolelist/permission-users
+   *  You should be logged in to the system in order to use the method. </p>
+   *  
+   *  <p>The typical usage of the method using GWT might look like following</p>
+   *  <pre>
+   *  
+   *  final String url = GWT.getHostPageBaseURL() + "api/userrolelist/permission-users";
+   *  RequestBuilder requestBuilder = new RequestBuilder( RequestBuilder.GET, url );
+   *  requestBuilder.setHeader( "accept", "application/json" );
+   *  requestBuilder.sendRequest( null, new RequestCallback() {
+   *    public void onError( Request request, Throwable caught ) {
+   *      //handle error if any
+   *    }
+   *    public void onResponseReceived( Request request, Response response ) {
+   *      JsArrayString users = parseUsersJson( JsonUtils.escapeJsonForEval( response.getText() ) );
+   *      for ( int i = 0; i < users.length(); i++ ) {
+   *        String user = users.get( i );
+   *        //do whatever you need
+   *      }
+   *    }
+   *  } );
+   *  
+   *  
+   *  This code invokes the API using REST service and iterates over the user names if the call was successful. 
+   *  </pre>
+   *  
+   * @return the list of users registered in the platform. It should never return null
+   * @throws Exception when an error occurred during the loading users from storage
+   */
   @GET
   @Path( "/permission-users" )
   @Produces( { APPLICATION_XML, APPLICATION_JSON } )
@@ -118,7 +151,7 @@ public class UserRoleListResource extends AbstractJaxRSResource {
   /**
    * Returns the list of users in the platform
    * 
-   * @return list of users
+   * @return list of users logins registered in the platform. 
    * 
    * @throws Exception
    */
