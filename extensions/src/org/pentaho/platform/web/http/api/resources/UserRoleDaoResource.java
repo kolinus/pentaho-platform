@@ -33,6 +33,8 @@ import org.pentaho.platform.security.policy.rolebased.actions.AdministerSecurity
 import org.pentaho.platform.security.policy.rolebased.actions.RepositoryCreateAction;
 import org.pentaho.platform.security.policy.rolebased.actions.RepositoryReadAction;
 
+import com.sun.jersey.api.client.WebResource;
+
 import javax.ws.rs.*;
 import javax.ws.rs.core.Response;
 import java.io.UnsupportedEncodingException;
@@ -49,7 +51,6 @@ import static javax.ws.rs.core.Response.Status.UNAUTHORIZED;
 
 /**
  *  UserRoleDao manage pentaho security user and roles in the platform.
- *
  *
  */
 @Path( "/userroledao/" )
@@ -85,12 +86,46 @@ public class UserRoleDaoResource extends AbstractJaxRSResource {
   }
 
   /**
-   * Returns the list of users in the platform's repository
-   *
-   * @return list of users in the platform
-   *
-   * @throws Exception
+   * Returns the list of users registered in the platform.
+   * 
+   *  <p> The method returns a list of users registered in the platform. 
+   *  Endpoint address is http://[host]:[port]/[webapp]/api/userroledao/users
+   *  You should be logged in to the system in order to use the method. 
+   *  You should also have administrative permissions to use the method or an exception will be thrown</p>
+   *  
+   *  <p>The typical usage of the method might look like following</p>
+   *  <pre>
+   *  {@code
+   *  import com.sun.jersey.api.client.Client;
+   *  import com.sun.jersey.api.client.WebResource;
+   *  import com.sun.jersey.api.client.config.DefaultClientConfig;
+   *  import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
+   *  import org.pentaho.platform.web.http.api.resources.UserListWrapper;
+   *  ...
+   *  public void testGetUsers() {
+   *    final String baseUrl = "http://[host]:[port]/[webapp]/";
+   *    Client client = Client.create( new DefaultClientConfig( ) );
+   *    client.addFilter( new HTTPBasicAuthFilter( "[user]", "[password]" ) );
+   *    final WebResource resource = client.resource( baseUrl + "api/userroledao/users" );
+   *    final UserListWrapper users = resource.get( UserListWrapper.class );
+   *    //use the users
+   *  }
+   *  }
+   *  </pre>
+   *  The method returns either XML or JSON response.
+   *  XML response from the method invocation looks like the following
+   *  <pre>
+   *  {@code
+   *  <userList><users>pat</users><users>admin</users><users>suzy</users><users>tiffany</users></userList>
+   *  }
+   *  </pre>
+   *  
+   *  
+   * @return the list of users registered in the platform.
+   * @throws Exception when an error occurred during the loading users from storage or if you do not have administrative permissions.
    */
+  //TODO refactoring candidate. we should throw meaningful exception if user does not have necessary permissions.
+  //also the method looks similar to UserRoleListResource.getUsers with the difference in permissions required
   @GET
   @Path( "/users" )
   @Produces( { APPLICATION_XML, APPLICATION_JSON } )
@@ -133,13 +168,45 @@ public class UserRoleDaoResource extends AbstractJaxRSResource {
   }
 
   /**
-   * Retrieves a selected user's roles
-   *
+   *  Retrieves specified user's roles
+   * 
+   *  <p> The method returns a list of user roles from the specified tenant. 
+   *  Endpoint address is http://[host]:[port]/[webapp]/api/userroledao/userRoles?tenant=[tenant]&userName=[username]
+   *  You should be logged in to the system in order to use the method. 
+   *  You should also have administrative permissions to use the method or an exception will be thrown</p>
+   *  
+   *  <p>The typical usage of the method might look like following</p>
+   *  <pre>
+   *  {@code
+   *  import com.sun.jersey.api.client.Client;
+   *  import com.sun.jersey.api.client.WebResource;
+   *  import com.sun.jersey.api.client.config.DefaultClientConfig;
+   *  import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
+   *  import org.pentaho.platform.web.http.api.resources.RoleListWrapper;
+   *  ...
+   *  public void testGetUserRoles() {
+   *    final String baseUrl = "http://[host]:[port]/[webapp]/";
+   *    Client client = Client.create( new DefaultClientConfig( ) );
+   *    client.addFilter( new HTTPBasicAuthFilter( "[user]", "[password]" ) );
+   *    final WebResource resource = client.resource( baseUrl + "api/userroledao/userRoles?userName=suzy" );
+   *    final RoleListWrapper roles = resource.get( RoleListWrapper.class );
+   *    //use the user roles
+   *  }
+   *  }
+   *  </pre>
+   *  The method returns either XML or JSON response.
+   *  XML response from the method invocation looks like the following
+   *  <pre>
+   *  {@code
+   *  <roleList><roles>Power User</roles></roleList>
+   *  }
+   *  </pre>
+   *  
    * @param tenantPath (tenant path where the user exist, null of empty string assumes default tenant)
    * @param userName (user name)
+   *  
    * @return list of roles fir the selected user
-   *
-   * @throws Exception
+   * @throws Exception when an error occurred during the loading users from storage or if you do not have administrative permissions.
    */
   @GET
   @Path( "/userRoles" )
@@ -180,13 +247,37 @@ public class UserRoleDaoResource extends AbstractJaxRSResource {
   }
 
   /**
-   * Associates selected role(s) to a user
-   *
-   * @param tenantPath (tenant path where the user exist, null of empty string assumes default tenant)
+   *  Associates specified role(s) to a user
+   * 
+   *  <p> The method associates specified role(s) to a user. The method should be invoked via PUT request.
+   *  Endpoint address is http://[host]:[port]/[webapp]/api/userroledao/assignRoleToUser?tenant=[tenant]&userName=[username]&roleNames=[tab separated list of role names]
+   *  You should be logged in to the system in order to use the method. 
+   *  You should also have administrative permissions to use the method or you'll receive HTTP 401 error.</p>
+   *  
+   *  <p>The typical usage of the method might look like following</p>
+   *  <pre>
+   *  {@code
+   *  import com.sun.jersey.api.client.Client;
+   *  import com.sun.jersey.api.client.WebResource;
+   *  import com.sun.jersey.api.client.config.DefaultClientConfig;
+   *  import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
+   *  ...
+   *  public void testAssignRoleToUser() {
+   *    final String baseUrl = "http://[host]:[port]/[webapp]/";
+   *    Client client = Client.create( new DefaultClientConfig( ) );
+   *    client.addFilter( new HTTPBasicAuthFilter( "[user]", "[password]" ) );
+   *    final WebResource resource = client.resource( baseUrl + "api/userroledao/assignRoleToUser?userName=suzy&roleNames=Administrator" );
+   *    final String message = resource.put( String.class );
+    *  }
+   *  }
+   *  </pre>
+   *  The method returns empty or non-empty HTTP 200 Ok response
+   *  
+   * @param tenantPath (tenant path where the user exist, null or empty string assumes default tenant)
    * @param userName (username)
    * @param roleNames (tab (\t) separated list of role names)
    *
-   * @return
+   * @return Empty HTTP 200 OK if everything is fine, HTTP 200 OK containing error message if an error occurred or HHTP 401 if you don't have necessary permissions
    */
   @PUT
   @Path( "/assignRoleToUser" )
@@ -216,13 +307,37 @@ public class UserRoleDaoResource extends AbstractJaxRSResource {
   }
 
   /**
-   * Remove selected roles(s) from a selected user
+   * Remove specified roles(s) from the specified user
    *
-   * @param tenantPath (tenant path where the user exist, null of empty string assumes default tenant)
+   *  <p> The method removes specified role(s) from the specified user. The method should be invoked via PUT request.
+   *  Endpoint address is http://[host]:[port]/[webapp]/api/userroledao/removeRoleFromUser?tenant=[tenant]&userName=[username]&roleNames=[tab separated list of role names]
+   *  You should be logged in to the system in order to use the method. 
+   *  You should also have administrative permissions to use the method or you'll receive HTTP 401 error.</p>
+   *  
+   *  <p>The typical usage of the method might look like following</p>
+   *  <pre>
+   *  {@code
+   *  import com.sun.jersey.api.client.Client;
+   *  import com.sun.jersey.api.client.WebResource;
+   *  import com.sun.jersey.api.client.config.DefaultClientConfig;
+   *  import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
+   *  ...
+   *  public void testRemoveRoleFromUser() {
+   *    final String baseUrl = "http://[host]:[port]/[webapp]/";
+   *    Client client = Client.create( new DefaultClientConfig( ) );
+   *    client.addFilter( new HTTPBasicAuthFilter( "[user]", "[password]" ) );
+   *    final WebResource resource = client.resource( baseUrl + "api/userroledao/removeRoleFromUser?userName=suzy&roleNames=Administrator" );
+   *    final String message = resource.put( String.class );
+    *  }
+   *  }
+   *  </pre>
+   *  The method returns empty or non-empty HTTP 200 Ok response
+   *  
+   * @param tenantPath (tenant path where the user exist, null or empty string assumes default tenant)
    * @param userName (username)
    * @param roleNames (tab (\t) separated list of role names)
    *
-   * @return
+   * @return Empty HTTP 200 OK if everything is fine, HTTP 200 OK containing error message if an error occurred or HHTP 401 if you don't have necessary permissions
    */
   @PUT
   @Path( "/removeRoleFromUser" )
@@ -252,13 +367,39 @@ public class UserRoleDaoResource extends AbstractJaxRSResource {
   }
 
   /**
-   * Associate all roles to the selected user
-   *
-   * @param tenantPath (tenant path where the user exist, null of empty string assumes default tenant)
+   *  Associates all roles to the specified user
+   * 
+   *  <p> The method associates all roles to the specified user. The method should be invoked via PUT request.
+   *  Endpoint address is http://[host]:[port]/[webapp]/api/userroledao/assignAllRolesToUser?tenant=[tenant]&userName=[username]
+   *  You should be logged in to the system in order to use the method.</p>
+   *  
+   *  <p>The typical usage of the method might look like following</p>
+   *  <pre>
+   *  {@code
+   *  import com.sun.jersey.api.client.Client;
+   *  import com.sun.jersey.api.client.WebResource;
+   *  import com.sun.jersey.api.client.config.DefaultClientConfig;
+   *  import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
+   *  ...
+   *  public void testAssignAllRolesToUser() {
+   *    final String baseUrl = "http://[host]:[port]/[webapp]/";
+   *    Client client = Client.create( new DefaultClientConfig( ) );
+   *    client.addFilter( new HTTPBasicAuthFilter( "[user]", "[password]" ) );
+   *    final WebResource resource = client.resource( baseUrl + "api/userroledao/assignAllRolesToUser?userName=suzy" );
+   *    final String message = resource.put( String.class );
+    *  }
+   *  }
+   *  </pre>
+   *  The method returns empty HTTP 200 Ok response
+   *  
+   * @param tenantPath (tenant path where the user exist, null or empty string assumes default tenant)
    * @param userName (username)
    *
-   * @return
+   * @return Empty HTTP 200 OK
    */
+  //TODO currently the method constantly returns 403 error.
+  // also there is no check for canAdminister -- it seems the check is necessary here
+  // also method always returns empty response --is it ok ?
   @PUT
   @Path( "/assignAllRolesToUser" )
   @Consumes( { WILDCARD } )
@@ -275,12 +416,36 @@ public class UserRoleDaoResource extends AbstractJaxRSResource {
   }
 
   /**
-   * Remove all roles from the selected user
-   *
-   * @param tenantPath (tenant path where the user exist, null of empty string assumes default tenant)
+   *  Remove all roles from the specified user
+   * 
+   *  <p> The method removes all roles from the specified user. The method should be invoked via PUT request.
+   *  Endpoint address is http://[host]:[port]/[webapp]/api/userroledao/removeAllRolesFromUser?tenant=[tenant]&userName=[username]
+   *  You should be logged in to the system in order to use the method. 
+   *  You should also have administrative permissions to use the method or you'll receive HTTP 401 error.</p>
+   *  
+   *  <p>The typical usage of the method might look like following</p>
+   *  <pre>
+   *  {@code
+   *  import com.sun.jersey.api.client.Client;
+   *  import com.sun.jersey.api.client.WebResource;
+   *  import com.sun.jersey.api.client.config.DefaultClientConfig;
+   *  import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
+   *  ...
+   *  public void testRemoveAllRolesFromUser() {
+   *    final String baseUrl = "http://[host]:[port]/[webapp]/";
+   *    Client client = Client.create( new DefaultClientConfig( ) );
+   *    client.addFilter( new HTTPBasicAuthFilter( "[user]", "[password]" ) );
+   *    final WebResource resource = client.resource( baseUrl + "api/userroledao/removeAllRolesFromUser?userName=suzy" );
+   *    final String message = resource.put( String.class );
+    *  }
+   *  }
+   *  </pre>
+   * Empty HTTP 200 OK if everything is fine, HTTP 200 OK containing error message if an error occurred.
+   *  
+   * @param tenantPath (tenant path where the user exist, null or empty string assumes default tenant)
    * @param userName (username)
    *
-   * @return
+   * @return Empty HTTP 200 OK if everything is fine, HTTP 200 OK containing error message if an error occurred or HHTP 401 if you don't have necessary permissions
    */
   @PUT
   @Path( "/removeAllRolesFromUser" )
@@ -302,14 +467,37 @@ public class UserRoleDaoResource extends AbstractJaxRSResource {
   }
 
   /**
-   * Associate list of users to the selected role
-   *
-   *
-   * @param tenantPath (tenant path where the user exist, null of empty string assumes default tenant)
+   *  Associates specified user(s) to the specified role.
+   * 
+   *  <p> The method associates specified user(s) to the specified role. The method should be invoked via PUT request.
+   *  Endpoint address is http://[host]:[port]/[webapp]/api/userroledao/assignUserToRole?tenant=[tenant]&userNames=[tab separated list of user names]&roleName=[rolename]
+   *  You should be logged in to the system in order to use the method.
+   *  You should also have administrative permissions to use the method or you'll receive HTTP 401 error.</p>
+   *  
+   *  <p>The typical usage of the method might look like following</p>
+   *  <pre>
+   *  {@code
+   *  import com.sun.jersey.api.client.Client;
+   *  import com.sun.jersey.api.client.WebResource;
+   *  import com.sun.jersey.api.client.config.DefaultClientConfig;
+   *  import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
+   *  ...
+   *  public void testAssignUserToRole() {
+   *    final String baseUrl = "http://[host]:[port]/[webapp]/";
+   *    Client client = Client.create( new DefaultClientConfig( ) );
+   *    client.addFilter( new HTTPBasicAuthFilter( "[user]", "[password]" ) );
+   *    final WebResource resource = client.resource( baseUrl + "api/userroledao/assignUserToRole?userNames=suzy&roleName=Administrator" );
+   *    final String message = resource.put( String.class );
+    *  }
+   *  }
+   *  </pre>
+   *  The method returns empty or non-empty HTTP 200 Ok response
+   *  
+   * @param tenantPath (tenant path where the user exist, null or empty string assumes default tenant)
    * @param userNames (list of tab (\t) separated user names
    * @param roleName (role name)
    *
-   * @return
+   * @return Empty HTTP 200 OK if everything is fine, HTTP 200 OK containing error message if an error occurred or HHTP 401 if you don't have necessary permissions
    */
   @PUT
   @Path( "/assignUserToRole" )
@@ -339,13 +527,37 @@ public class UserRoleDaoResource extends AbstractJaxRSResource {
   }
 
   /**
-   * Remove user(s) from a particular role
-   *
-   * @param tenantPath (tenant path where the user exist, null of empty string assumes default tenant)
+   *  Remove specified user(s) from the particular role.
+   * 
+   *  <p> The method removes specified user(s) from the specified role. The method should be invoked via PUT request.
+   *  Endpoint address is http://[host]:[port]/[webapp]/api/userroledao/removeUserFromRole?tenant=[tenant]&userNames=[tab separated list of user names]&roleName=[rolename]
+   *  You should be logged in to the system in order to use the method.
+   *  You should also have administrative permissions to use the method or you'll receive HTTP 401 error.</p>
+   *  
+   *  <p>The typical usage of the method might look like following</p>
+   *  <pre>
+   *  {@code
+   *  import com.sun.jersey.api.client.Client;
+   *  import com.sun.jersey.api.client.WebResource;
+   *  import com.sun.jersey.api.client.config.DefaultClientConfig;
+   *  import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
+   *  ...
+   *  public void testRemoveUserFromRole() {
+   *    final String baseUrl = "http://[host]:[port]/[webapp]/";
+   *    Client client = Client.create( new DefaultClientConfig( ) );
+   *    client.addFilter( new HTTPBasicAuthFilter( "[user]", "[password]" ) );
+   *    final WebResource resource = client.resource( baseUrl + "api/userroledao/removeUserFromRole?userNames=suzy&roleName=Administrator" );
+   *    final String message = resource.put( String.class );
+    *  }
+   *  }
+   *  </pre>
+   *  The method returns empty or non-empty HTTP 200 Ok response
+   *  
+   * @param tenantPath (tenant path where the user exist, null or empty string assumes default tenant)
    * @param userNames (list of tab (\t) separated user names
    * @param roleName (role name)
    *
-   * @return
+   * @return Empty HTTP 200 OK if everything is fine, HTTP 200 OK containing error message if an error occurred or HHTP 401 if you don't have necessary permissions
    */
   @PUT
   @Path( "/removeUserFromRole" )
@@ -375,13 +587,39 @@ public class UserRoleDaoResource extends AbstractJaxRSResource {
   }
 
   /**
-   * Associates all user to a particular role
+   *  Associates all users to the specified role
+   * 
+   *  <p> The method associates all users to the specified role. The method should be invoked via PUT request.
+   *  Endpoint address is http://[host]:[port]/[webapp]/api/userroledao/assignAllUsersToRole?tenant=[tenant]&roleName=[rolename]
+   *  You should be logged in to the system in order to use the method.</p>
+   *  
+   *  <p>The typical usage of the method might look like following</p>
+   *  <pre>
+   *  {@code
+   *  import com.sun.jersey.api.client.Client;
+   *  import com.sun.jersey.api.client.WebResource;
+   *  import com.sun.jersey.api.client.config.DefaultClientConfig;
+   *  import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
+   *  ...
+   *  public void testAssignAllUsersToRole() {
+   *    final String baseUrl = "http://[host]:[port]/[webapp]/";
+   *    Client client = Client.create( new DefaultClientConfig( ) );
+   *    client.addFilter( new HTTPBasicAuthFilter( "[user]", "[password]" ) );
+   *    final WebResource resource = client.resource( baseUrl + "api/userroledao/assignAllUsersToRole?roleName=Administrator" );
+   *    final String message = resource.put( String.class );
+    *  }
+   *  }
+   *  </pre>
+   *  The method returns empty HTTP 200 Ok response
+   *  
+   * @param tenantPath (tenant path where the user exist, null or empty string assumes default tenant)
+   * @param roleName (rolename)
    *
-   * @param tenantPath (tenant path where the user exist, null of empty string assumes default tenant)
-   * @param roleName (role name)
-   *
-   * @return
+   * @return Empty HTTP 200 OK
    */
+  //TODO currently the method constantly returns 403 error.
+  // also there is no check for canAdminister -- it seems the check is necessary here
+  // also method always returns empty response --is it ok ?
   @PUT
   @Path( "/assignAllUsersToRole" )
   @Consumes( { WILDCARD } )
@@ -398,12 +636,36 @@ public class UserRoleDaoResource extends AbstractJaxRSResource {
   }
 
   /**
-   * Removes all users from a particular role
-   *
-   * @param tenantPath (tenant path where the user exist, null of empty string assumes default tenant)
+   *  Remove all users from the specified role
+   * 
+   *  <p> The method removes all users from the specified role. The method should be invoked via PUT request.
+   *  Endpoint address is http://[host]:[port]/[webapp]/api/userroledao/removeAllUsersFromRole?tenant=[tenant]&roleName=[rolename]
+   *  You should be logged in to the system in order to use the method. 
+   *  You should also have administrative permissions to use the method or you'll receive HTTP 401 error.</p>
+   *  
+   *  <p>The typical usage of the method might look like following</p>
+   *  <pre>
+   *  {@code
+   *  import com.sun.jersey.api.client.Client;
+   *  import com.sun.jersey.api.client.WebResource;
+   *  import com.sun.jersey.api.client.config.DefaultClientConfig;
+   *  import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
+   *  ...
+   *  public void testRemoveAllUsersFromRole() {
+   *    final String baseUrl = "http://[host]:[port]/[webapp]/";
+   *    Client client = Client.create( new DefaultClientConfig( ) );
+   *    client.addFilter( new HTTPBasicAuthFilter( "[user]", "[password]" ) );
+   *    final WebResource resource = client.resource( baseUrl + "api/userroledao/removeAllUsersFromRole?roleName=Administrator" );
+   *    final String message = resource.put( String.class );
+    *  }
+   *  }
+   *  </pre>
+   * Empty HTTP 200 OK if everything is fine, HTTP 200 OK containing error message if an error occurred is returned.
+   *  
+   * @param tenantPath (tenant path where the user exist, null or empty string assumes default tenant)
    * @param roleName (role name)
    *
-   * @return
+   * @return Empty HTTP 200 OK if everything is fine, HTTP 200 OK containing error message if an error occurred or HHTP 401 if you don't have necessary permissions
    */
   @PUT
   @Path( "/removeAllUsersFromRole" )
@@ -425,13 +687,42 @@ public class UserRoleDaoResource extends AbstractJaxRSResource {
   }
 
   /**
-   * Create a new user with provided information.
+   * Create a new user with provided credentials.
+   * 
+   * <p> The method create a new user with provided credentials. The method should be invoked via PUT request.
+   *  Endpoint address is http://[host]:[port]/[webapp]/api/userroledao/createUser?tenant=[tenant]
+   *  You should be logged in to the system in order to use the method.</p>
+   *  
+   *  <p>The typical usage of the method might look like following</p>
+   *  <pre>
+   *  {@code
+   *  import com.sun.jersey.api.client.Client;
+   *  import com.sun.jersey.api.client.WebResource;
+   *  import com.sun.jersey.api.client.config.DefaultClientConfig;
+   *  import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
+   *  import org.pentaho.platform.web.http.api.resources.User;
+   *  ...
+   *  public void testCreateUser() {
+   *    final String baseUrl = "http://[host]:[port]/[webapp]/";
+   *    Client client = Client.create( new DefaultClientConfig( ) );
+   *    client.addFilter( new HTTPBasicAuthFilter( "[user]", "[password]" ) );
+   *    final WebResource resource = client.resource( baseUrl + "api/userroledao/createUser" );
+   *    User user = new User();
+   *    user.setPassword( "111" );
+   *    user.setUserName( "test" );
+   *    final String message = resource.put( String.class, user );
+    *  }
+   *  }
+   *  </pre>
+   *  The method returns empty HTTP 200 Ok response
    *
-   * @param tenantPath (tenant path where the user exist, null of empty string assumes default tenant)
+   * @param tenantPath (tenant path where the user exist, null or empty string assumes default tenant)
    * @param user (user information <code> User </code>)
    *
-   * @return
+   *  @return Empty HTTP 200 OK
    */
+  //TODO is a canAdminister() check should be added here?
+  //currently method constantly returns HTTP 403 response when called using Jersey  
   @PUT
   @Path( "/createUser" )
   @Consumes( { WILDCARD } )
@@ -506,11 +797,34 @@ public class UserRoleDaoResource extends AbstractJaxRSResource {
   }
 
   /**
-   * Delete user(s) from the platform
+   * Delete specified user(s) from the platform.
+   * 
+   * <p> The method removes specified users from platform. The method should be invoked via PUT request.
+   *  Endpoint address is http://[host]:[port]/[webapp]/api/userroledao/deleteUsers?userNames=[tab separated usernames]
+   *  You should be logged in to the system in order to use the method.
+   *  You should also have administrative permissions to use the method or you'll receive HTTP 401 error</p>
+   *  
+   *  <p>The typical usage of the method might look like following</p>
+   *  <pre>
+   *  {@code
+   *  import com.sun.jersey.api.client.Client;
+   *  import com.sun.jersey.api.client.WebResource;
+   *  import com.sun.jersey.api.client.config.DefaultClientConfig;
+   *  import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
+   *  ...
+   *  public void testDeleteUsers() {
+   *    final String baseUrl = "http://[host]:[port]/[webapp]/";
+   *    Client client = Client.create( new DefaultClientConfig( ) );
+   *    client.addFilter( new HTTPBasicAuthFilter( "[user]", "[password]" ) );
+   *    final WebResource resource = client.resource( baseUrl + "api/userroledao/deleteUsers?userNames=test" );
+   *    final String message = resource.put( String.class );
+    *  }
+   *  }
+   *  </pre>
+   *  The method returns empty or non-empty  HTTP 200 Ok response
    *
-   * @param userNames (list of tab (\t) separated user names)
-   *
-   * @return
+   *  @param userNames (list of tab (\t) separated user names)
+   *  @return Empty HTTP 200 OK if everything is fine, HTTP 200 OK containing error message if an error occurred or HHTP 401 if you don't have necessary permissions
    */
   @PUT
   @Path( "/deleteUsers" )
@@ -537,11 +851,38 @@ public class UserRoleDaoResource extends AbstractJaxRSResource {
   }
 
   /**
-   * Update the password of a selected user
+   * Update the password for the specified user.
+   * 
+   * <p> The method updates password for the specified user. The method should be invoked via PUT request.
+   *  Endpoint address is http://[host]:[port]/[webapp]/api/userroledao/updatePassword
+   *  You should be logged in to the system in order to use the method.
+   *  You should also have administrative permissions to use the method or you'll receive HTTP 401 error</p>
+   *  
+   *  <p>The typical usage of the method might look like following</p>
+   *  <pre>
+   *  {@code
+   *  import com.sun.jersey.api.client.Client;
+   *  import com.sun.jersey.api.client.WebResource;
+   *  import com.sun.jersey.api.client.config.DefaultClientConfig;
+   *  import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
+   *  import org.pentaho.platform.web.http.api.resources.User;
+   *  ...
+   *  public void testUpdatePassword() {
+   *    final String baseUrl = "http://[host]:[port]/[webapp]/";
+   *    Client client = Client.create( new DefaultClientConfig( ) );
+   *    client.addFilter( new HTTPBasicAuthFilter( "[user]", "[password]" ) );
+   *    final WebResource resource = client.resource( baseUrl + "api/userroledao/updatePassword" );
+   *    User user = new User();
+   *    user.setPassword( "111" );
+   *    user.setUserName( "test" );
+   *    final String message = resource.put( String.class, user );
+    *  }
+   *  }
+   *  </pre>
+   *  The method returns empty or non-emty HTTP 200 Ok response
    *
-   * @param user (user information <code> User </code>)
-   *
-   * @return
+   *  @param user (user information <code> User </code>)
+   *  @return Empty HTTP 200 OK if everything is fine, HTTP 200 OK containing error message if an error occurred or HHTP 401 if you don't have necessary permissions
    */
   @PUT
   @Path( "/updatePassword" )
@@ -658,6 +999,7 @@ public class UserRoleDaoResource extends AbstractJaxRSResource {
     return Response.ok( errMessage ).build();
   }
 
+  //TODO another copy paste
   private boolean canAdminister() {
     IAuthorizationPolicy policy = PentahoSystem.get( IAuthorizationPolicy.class );
     return policy.isAllowed( RepositoryReadAction.NAME ) && policy.isAllowed( RepositoryCreateAction.NAME )

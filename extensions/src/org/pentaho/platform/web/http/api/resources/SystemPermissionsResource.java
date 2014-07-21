@@ -36,10 +36,50 @@ import static javax.ws.rs.core.Response.Status.UNAUTHORIZED;
 public class SystemPermissionsResource extends AbstractJaxRSResource {
 
   /**
-   * Return the legacy permissions (These permissions are 4.8x related) 
-   *
-   * @return list of permissions
-   * @throws Exception
+   * Returns list of current user permissions.
+   * 
+   *  <p> The method returns the list of permissions for current user. It's a legacy 4.8 method. 
+   *  Endpoint address is http://[host]:[port]/[webapp]/api/legacy/permissions
+   *  You should be logged in to the system in order to use the method. Also you need to have administrative permissions for method execution. 
+   *  Otherwise you'll receive HTTP 401 error.</p>
+   *  
+   *  <p>The typical usage of the method might look like following</p>
+   *  <pre>
+   *  {@code
+   *  import com.sun.jersey.api.client.Client;
+   *  import com.sun.jersey.api.client.WebResource;
+   *  import com.sun.jersey.api.client.config.DefaultClientConfig;
+   *  import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
+   *  ...
+   *  public void testIsAuthorized() {
+   *    final String baseUrl = "http://[host]:[port]/[webapp]/";
+   *    Client client = Client.create( new DefaultClientConfig( ) );
+   *    client.addFilter( new HTTPBasicAuthFilter( "[user]", "[password]" ) );
+   *    final WebResource resource = client.resource( baseUrl + "api/legacy/permissions" );
+   *    final String permissions = resource.get( String.class );
+   *    //parse and use permissions returned
+   *  }
+   *  }
+   *  </pre>
+   *  The method returns XML response.
+   *  Response from the method invocation looks like the following
+   *  <pre>
+   *  {@code
+   *  <acls>
+   *    <acl><name>Update</name><mask>8</mask></acl>
+   *    <acl><name>Create</name><mask>4</mask></acl>
+   *    <acl><name>Execute</name><mask>1</mask></acl>
+   *    <acl><name>All</name><mask>-1</mask></acl>
+   *    <acl><name>Delete</name><mask>16</mask></acl>
+   *    <acl><name>NONE</name><mask>0</mask></acl>
+   *    <acl><name>Subscribe</name><mask>2</mask></acl>
+   *  </acls>
+   *  }
+   *  </pre>
+   *  
+   *  
+   * @return list of the permissions for current user.
+   * @throws Exception when an error occurred during the loading user permissions from the storage
    */
 
   @GET
@@ -56,7 +96,7 @@ public class SystemPermissionsResource extends AbstractJaxRSResource {
       throw new WebApplicationException( t );
     }
   }
-
+//TODO copy paste of the method
   private boolean canAdminister() {
     IAuthorizationPolicy policy = PentahoSystem.get( IAuthorizationPolicy.class );
     return policy.isAllowed( RepositoryReadAction.NAME ) && policy.isAllowed( RepositoryCreateAction.NAME )

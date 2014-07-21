@@ -49,10 +49,39 @@ public class AuthorizationActionResource {
   }
 
   /**
-   * Validates if a current user is authorized to perform a specific action
-   *
-   * @param authAction Authorization Action to be validated
-   * @return "true" or "false"
+   * Returns true if current user is authorized to perform specified action or false otherwise.
+   * 
+   *  <p> The method checks if current user is authorized to perform action specified and returns true if authorized and false otherwise. 
+   *  Endpoint address is http://[host]:[port]/[webapp]/api/authorization/action/isauthorized/?authAction=[action]
+   *  You should be logged in to the system in order to use the method.</p>
+   *  
+   *  <p>The typical usage of the method might look like following</p>
+   *  <pre>
+   *  {@code
+   *  import com.sun.jersey.api.client.Client;
+   *  import com.sun.jersey.api.client.WebResource;
+   *  import com.sun.jersey.api.client.config.DefaultClientConfig;
+   *  import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
+   *  ...
+   *  public void testIsAuthorized() {
+   *    final String baseUrl = "http://[host]:[port]/[webapp]/";
+   *    Client client = Client.create( new DefaultClientConfig( ) );
+   *    client.addFilter( new HTTPBasicAuthFilter( "[user]", "[password]" ) );
+   *    final WebResource resource = client.resource( baseUrl + "api/authorization/action/isauthorized/?authAction=org.pentaho.scheduler.manage" );
+   *    final String isAuth = resource.get( String.class );
+   *  }
+   *  }
+   *  </pre>
+   *  The method returns plain text response.
+   *  Response from the method invocation looks like the following
+   *  <pre>
+   *  {@code
+   *  false
+   *  }
+   *  </pre>
+   *  
+   *  
+   * @return true if current user is authorized to perform specified action or false otherwise.
    */
   @GET
   @Path( "/isauthorized" )
