@@ -36,12 +36,46 @@ import static javax.ws.rs.core.Response.Status.UNAUTHORIZED;
 public class SystemUsersResource extends AbstractJaxRSResource {
 
   /**
-   * Returns the list of users in the platform
+   * Returns the list of users registered in the platform..
    * 
-   * @return list of users
-   * 
-   * @throws Exception
+   *  <p> The method returns a list of users registered in the platform. 
+   *  Endpoint address is http://[host]:[port]/[webapp]/api/users
+   *  You should be logged in to the system in order to use the method. You should also have administrative permissions to use the method.
+   *  Otherwise you will receive HTTP 401 error.</p>
+   *  
+   *  <p>The typical usage of the method might look like following</p>
+   *  <pre>
+   *  {@code
+   *  import com.sun.jersey.api.client.Client;
+   *  import com.sun.jersey.api.client.WebResource;
+   *  import com.sun.jersey.api.client.config.DefaultClientConfig;
+   *  import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
+   *  import org.pentaho.platform.web.http.api.resources.UserListWrapper;
+   *  ...
+   *  public void testGetUsers() {
+   *    final String baseUrl = "http://[host]:[port]/[webapp]/";
+   *    Client client = Client.create( new DefaultClientConfig( ) );
+   *    client.addFilter( new HTTPBasicAuthFilter( "[user]", "[password]" ) );
+   *    final WebResource resource = client.resource( baseUrl + "api/users" );
+   *    final String users = resource.get( String.class );
+   *    //use the users
+   *  }
+   *  }
+   *  </pre>
+   *  The method returns XML response.
+   *  XML response from the method invocation looks like the following
+   *  <pre>
+   *  {@code
+   *  <users><user>suzy</user><user>pat</user><user>tiffany</user><user>admin</user></users>
+   *  }
+   *  </pre>
+   *  
+   *  
+   * @return the list of users registered in the platform..
+   * @throws Exception when an error occurred during the loading users from storage
    */
+  //TODO the method looks similar to UserRoleListResource.getUsers method. But differs in requirements for admin privileges and the output fomat
+  //looks like a good candidate for refactoring
   @GET
   @Produces( { MediaType.APPLICATION_XML } )
   public Response getUsers() throws Exception {
@@ -55,7 +89,7 @@ public class SystemUsersResource extends AbstractJaxRSResource {
       throw new WebApplicationException( t );
     }
   }
-
+//TODO: it's another copy paste of the method
   private boolean canAdminister() {
     IAuthorizationPolicy policy = PentahoSystem.get( IAuthorizationPolicy.class );
     return policy.isAllowed( RepositoryReadAction.NAME ) && policy.isAllowed( RepositoryCreateAction.NAME )

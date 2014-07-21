@@ -74,11 +74,46 @@ public class UserRoleListResource extends AbstractJaxRSResource {
   }
 
   /**
-   * Returns the list of users in the platform
+   * Returns the list of users registered in the platform.
    * 
-   * @return list of users
-   * 
-   * @throws Exception
+   *  <p> The method returns a list of user names. The method never returns null.
+   *  Endpoint address is http://[host]:[port]/[webapp]/api/userrolelist/permission-users
+   *  You should be logged in to the system in order to use the method. </p>
+   *  
+   *  <p>The typical usage of the method using GWT might look like following</p>
+   *  <pre>
+   *  {@code
+   *  final String url = GWT.getHostPageBaseURL() + "api/userrolelist/permission-users";
+   *  RequestBuilder requestBuilder = new RequestBuilder( RequestBuilder.GET, url );
+   *  requestBuilder.setHeader( "accept", "application/json" );
+   *  requestBuilder.sendRequest( null, new RequestCallback() {
+   *    public void onError( Request request, Throwable caught ) {
+   *      //handle error if any
+   *    }
+   *    public void onResponseReceived( Request request, Response response ) {
+   *      JsArrayString users = parseUsersJson( JsonUtils.escapeJsonForEval( response.getText() ) );
+   *      for ( int i = 0; i < users.length(); i++ ) {
+   *        String user = users.get( i );
+   *        //do whatever you need
+   *      }
+   *    }
+   *  } );
+   *  }
+   *  </pre>
+   *   The code above invokes the API using REST service and iterates over the user names if the call was successful. 
+   *  
+   *  The method may return either XML or JSON response. 
+   *  XML response from the method invocation looks like the following
+   *  <pre>
+   *  {@code
+   *  <userList><users>pat</users><users>admin</users><users>suzy</users><users>tiffany</users></userList>
+   *  }
+   *  </pre>
+   *  
+   *  
+   *  
+   * @return the list of users registered in the platform. It should never return null
+   * @throws Exception when an error occurred during the loading users from storage
    */
   @GET
   @Path( "/permission-users" )
@@ -116,11 +151,42 @@ public class UserRoleListResource extends AbstractJaxRSResource {
   }
 
   /**
-   * Returns the list of users in the platform
+   * Returns the list of users registered in the platform..
    * 
-   * @return list of users
-   * 
-   * @throws Exception
+   *  <p> The method returns a list of users registered in the platform. 
+   *  Endpoint address is http://[host]:[port]/[webapp]/api/userrolelist/users
+   *  You should be logged in to the system in order to use the method.</p>
+   *  
+   *  <p>The typical usage of the method might look like following</p>
+   *  <pre>
+   *  {@code
+   *  import com.sun.jersey.api.client.Client;
+   *  import com.sun.jersey.api.client.WebResource;
+   *  import com.sun.jersey.api.client.config.DefaultClientConfig;
+   *  import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
+   *  import org.pentaho.platform.web.http.api.resources.UserListWrapper;
+   *  ...
+   *  public void testGetUsers() {
+   *    final String baseUrl = "http://[host]:[port]/[webapp]/";
+   *    Client client = Client.create( new DefaultClientConfig( ) );
+   *    client.addFilter( new HTTPBasicAuthFilter( "[user]", "[password]" ) );
+   *    final WebResource resource = client.resource( baseUrl + "api/userrolelist/users" );
+   *    final UserListWrapper users = resource.get( UserListWrapper.class );
+   *    //use the users
+   *  }
+   *  }
+   *  </pre>
+   *  The method returns either XML or JSON response.
+   *  XML response from the method invocation looks like the following
+   *  <pre>
+   *  {@code
+   *  <userList><users>pat</users><users>admin</users><users>suzy</users><users>tiffany</users></userList>
+   *  }
+   *  </pre>
+   *  
+   *  
+   * @return the list of users registered in the platform..
+   * @throws Exception when an error occurred during the loading users from storage
    */
   @GET
   @Path( "/users" )
@@ -184,6 +250,7 @@ public class UserRoleListResource extends AbstractJaxRSResource {
    * 
    * @throws Exception
    */
+  
   @GET
   @Path( "/extraRoles" )
   @Produces( { APPLICATION_XML, APPLICATION_JSON } )
@@ -192,11 +259,42 @@ public class UserRoleListResource extends AbstractJaxRSResource {
   }
 
   /**
-   * Returns roles for a given user
+   * Returns the list of roles for specified user.
    * 
-   * @param user
-   * @return list of roles
-   * @throws Exception
+   *  <p> The method returns a list of user roles. 
+   *  Endpoint address is http://[host]:[port]/[webapp]/api/userrolelist/getRolesForUser/?user=[username]
+   *  You should be logged in to the system in order to use the method. You should also have administrative permissions to use the method.
+   *  Otherwise you will receive HTTP 401 error.</p>
+   *  
+   *  <p>The typical usage of the method might look like following</p>
+   *  <pre>
+   *  {@code
+   *  import com.sun.jersey.api.client.Client;
+   *  import com.sun.jersey.api.client.WebResource;
+   *  import com.sun.jersey.api.client.config.DefaultClientConfig;
+   *  import com.sun.jersey.api.client.filter.HTTPBasicAuthFilter;
+   *  ...
+   *  public void testGetRolesForUser() {
+   *    final String baseUrl = "http://[host]:[port]/[webapp]/";
+   *    Client client = Client.create( new DefaultClientConfig( ) );
+   *    client.addFilter( new HTTPBasicAuthFilter( "[user]", "[password]" ) );
+   *    final WebResource resource = client.resource( baseUrl + "api/userrolelist/getRolesForUser/?user=[login]" );
+   *    final String roles = resource.get( String.class );
+   *    //parse and use the roles
+   *  }
+   *  }
+   *  </pre>
+   *  The method returns either XML or JSON response.
+   *  XML response from the method invocation looks like the following
+   *  <pre>
+   *  {@code
+   *  <roles><role>Authenticated</role><role>Power User</role></roles>
+   *  }
+   *  </pre>
+   *  
+   *  
+   * @return the list of roles for specified user or HTTP 401 if you are not authorized or don't have necessary permissions.
+   * @throws Exception when an error occurred during the loading user roles from the storage
    */
   @GET
   @Path( "/getRolesForUser" )
@@ -237,7 +335,7 @@ public class UserRoleListResource extends AbstractJaxRSResource {
       return Response.status( UNAUTHORIZED ).build();
     }
   }
-
+//TODO: copy paste of the method
   private boolean canAdminister() {
     IAuthorizationPolicy policy = PentahoSystem.get( IAuthorizationPolicy.class );
     return policy.isAllowed( RepositoryReadAction.NAME ) && policy.isAllowed( RepositoryCreateAction.NAME )
