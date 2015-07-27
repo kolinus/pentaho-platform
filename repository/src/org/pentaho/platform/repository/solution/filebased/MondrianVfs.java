@@ -57,6 +57,10 @@ public class MondrianVfs implements FileProvider {
     return new SolutionRepositoryVfsFileObject( RepositoryFile.SEPARATOR + "etc" + RepositoryFile.SEPARATOR
       + "mondrian" + catalog + RepositoryFile.SEPARATOR + fileName );
   }
+  
+  public FileObject getCatalogAnnotation( String catalog ) {
+    return getCatalogFileObject( RepositoryFile.SEPARATOR + catalog, "annotations.xml" );
+  }
 
   public Collection getCapabilities() {
     return null;
